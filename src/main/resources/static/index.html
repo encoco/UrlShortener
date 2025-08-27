@@ -334,13 +334,14 @@
                 body: JSON.stringify({ originalUrl })
             });
 
+            console.log(response.data);
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
 
-            // 단축 URL 생성 (localhost:8080 기반)
             const shortUrl = `http://localhost:8080/${data.shortCode}`;
 
             const newUrlData = {
