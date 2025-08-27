@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL 단축기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            margin-left: 10px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff30;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-url {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .short-url {
+            flex: 1;
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            padding: 12px 20px;
+            background: #28a745;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .copy-btn.copied {
+            background: #6c757d;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+
+        .recent-urls {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .recent-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .url-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .url-item:last-child {
+            border-bottom: none;
+        }
+
+        .original-url {
+            flex: 1;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-right: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .short-code {
+            color: #667eea;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔗 URL 단축기</h1>
+
+    <form id="urlForm">
+        <div class="input-group">
+            <input
+                    type="url"
+                    id="urlInput"
+                    placeholder="단축할 URL을 입력하세요 (예: https://example.com)"
+                    required
+            >
+        </div>
+
+        <button type="submit" class="btn" id="shortenBtn">
+            단축하기
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+        </button>
+    </form>
+
+    <div id="result" class="result">
+        <div class="result-url">
+            <input type="text" class="short-url" id="shortUrlDisplay" readonly>
+            <button class="copy-btn" id="copyBtn">복사</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="clickCount">0</div>
+                <div class="stat-label">클릭 수</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="createdDate">방금</div>
+                <div class="stat-label">생성일</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-urls" id="recentUrls">
+        <div class="recent-title">최근 단축된 URL</div>
+        <div id="urlList"></div>
+    </div>
+</div>
+
+<script>
+    // 메모리에 저장할 URL 데이터
+    let urlData = JSON.parse(localStorage.getItem('urlData')) || [];
+    let urlCounter = parseInt(localStorage.getItem('urlCounter')) || 1;
+
+    // API 베이스 URL
+    const API_BASE_URL = 'http://localhost:8080/api';
+
+    // 폼 제출 처리
+    document.getElementById('urlForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const urlInput = document.getElementById('urlInput');
+        const shortenBtn = document.getElementById('shortenBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        // 로딩 시작
+        shortenBtn.disabled = true;
+        loading.style.display = 'inline-block';
+        result.classList.remove('show');
+
+        try {
+            const originalUrl = urlInput.value;
+
+            // 백엔드 API 호출
+            const response = await fetch(`${API_BASE_URL}/urls/shorten`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ originalUrl })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // 단축 URL 생성 (localhost:8080 기반)
+            const shortUrl = `http://localhost:8080/${data.shortCode}`;
+
+            const newUrlData = {
+                id: data.id,
+                shortCode: data.shortCode,
+                originalUrl: data.originalUrl,
+                shortUrl: shortUrl,
+                createdAt: new Date(data.createdAt),
+                clickCount: data.clickCount || 0
+            };
+
+            // 로컬 데이터 업데이트
+            urlData.unshift(newUrlData);
+            if (urlData.length > 10) urlData.pop();
+            localStorage.setItem('urlData', JSON.stringify(urlData));
+
+            // 결과 표시
+            displayResult(newUrlData);
+            updateRecentUrls();
+
+            // 폼 초기화
+            urlInput.value = '';
+
+        } catch (error) {
+            console.error('API 호출 오류:', error);
+            showError('URL 단축에 실패했습니다. 서버 연결을 확인해주세요.');
+        } finally {
+            // 로딩 종료
+            shortenBtn.disabled = false;
+            loading.style.display = 'none';
+        }
+    });
+
+    // 통계 데이터 가져오기
+    async function getUrlStats(shortCode) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/urls/${shortCode}/stats`);
+            if (response.ok) {
+                return await response.json();
+            }
+        } catch (error) {
+            console.error('통계 데이터 가져오기 오류:', error);
+        }
+        return null;
+    }
+
+    // 최근 URL 목록 가져오기
+    async function loadRecentUrls() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/urls/recent`);
+            if (response.ok) {
+                const recentUrls = await response.json();
+                urlData = recentUrls.map(item => ({
+                    ...item,
+                    shortUrl: `http://localhost:8080/${item.shortCode}`,
+                    createdAt: new Date(item.createdAt)
+                }));
+                localStorage.setItem('urlData', JSON.stringify(urlData));
+                updateRecentUrls();
+            }
+        } catch (error) {
+            console.error('최근 URL 로드 오류:', error);
+            // 오류 시 로컬 데이터 사용
+            updateRecentUrls();
+        }
+    }
+
+    // 결과 표시
+    function displayResult(data) {
+        const result = document.getElementById('result');
+        const shortUrlDisplay = document.getElementById('shortUrlDisplay');
+        const clickCount = document.getElementById('clickCount');
+        const createdDate = document.getElementById('createdDate');
+
+        shortUrlDisplay.value = data.shortUrl;
+        clickCount.textContent = data.clickCount;
+        createdDate.textContent = formatDate(data.createdAt);
+
+        result.classList.remove('error');
+        result.classList.add('show');
+    }
+
+    // 에러 표시
+    function showError(message) {
+        const result = document.getElementById('result');
+        result.innerHTML = `<p>${message}</p>`;
+        result.classList.add('error');
+        result.classList.add('show');
+    }
+
+    // 복사 기능
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        const shortUrlDisplay = document.getElementById('shortUrlDisplay');
+        const copyBtn = this;
+
+        shortUrlDisplay.select();
+        document.execCommand('copy');
+
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '복사됨!';
+        copyBtn.classList.add('copied');
+
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.classList.remove('copied');
+        }, 2000);
+    });
+
+    // 최근 URL 목록 업데이트
+    function updateRecentUrls() {
+        const urlList = document.getElementById('urlList');
+
+        if (urlData.length === 0) {
+            urlList.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">아직 단축된 URL이 없습니다.</p>';
+            return;
+        }
+
+        urlList.innerHTML = urlData.map(item => `
+                <div class="url-item">
+                    <div class="original-url" title="${item.originalUrl}">${item.originalUrl}</div>
+                    <div class="short-code">
+                        <a href="http://localhost:8080/${item.shortCode}" target="_blank" style="color: #667eea; text-decoration: none;">
+                            ${item.shortCode}
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    // 날짜 포맷팅
+    function formatDate(date) {
+        const now = new Date();
+        const diff = now - new Date(date);
+        const minutes = Math.floor(diff / 60000);
+
+        if (minutes < 1) return '방금';
+        if (minutes < 60) return `${minutes}분 전`;
+
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}시간 전`;
+
+        const days = Math.floor(hours / 24);
+        return `${days}일 전`;
+    }
+
+    // 페이지 로드 시 최근 URL 목록 로드
+    window.addEventListener('load', () => {
+        loadRecentUrls();
+    });
+</script>
+</body>
+</html>
