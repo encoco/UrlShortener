@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: ticket
+  data:
+    redis:
+      host: localhost
+      port: 6379
