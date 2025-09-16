@@ -67,3 +67,20 @@
 	</build>
 
 </project>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE USER 'testuser'@'localhost' IDENTIFIED BY 'testpass';
+GRANT ALL PRIVILEGES ON *.* TO 'testuser'@'localhost';
+FLUSH PRIVILEGES;
